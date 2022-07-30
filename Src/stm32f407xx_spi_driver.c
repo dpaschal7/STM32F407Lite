@@ -2,6 +2,11 @@
 #include "stm32f407xx_spi_driver.h"
 
 
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_rxne_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle);
+
+
 /**
  * @brief  
  * @note   
@@ -196,6 +201,57 @@ void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len) {
 /**
  * @brief  
  * @note   
+ * @param  *pSPIHandle: 
+ * @param  *pTxBuffer: 
+ * @param  Len: 
+ * @retval None
+ */
+
+uint8_t SPI_SendDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pTxBuffer, uint32_t Len) {
+    uint8_t state = pSPIHandle->TxState;
+    if (state != SPI_BUSY_IN_TX) {
+
+        pSPIHandle->pTxBuffer = pTxBuffer;
+        pSPIHandle->TxLen = Len;
+
+        pSPIHandle->TxState = SPI_BUSY_IN_TX;
+
+        pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_TXEIE); //Enables TXEIE bit to trigger on interrupt from the TXE flag in SR
+
+
+    }
+
+    return state;
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pSPIHandle: 
+ * @param  *pRxBuffer: 
+ * @param  Len: 
+ * @retval None
+ */
+uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t Len) {
+        uint8_t state = pSPIHandle->RxState;
+    if (state != SPI_BUSY_IN_RX) {
+
+        pSPIHandle->pRxBuffer = pRxBuffer;
+        pSPIHandle->RxLen = Len;
+
+        pSPIHandle->RxState = SPI_BUSY_IN_RX;
+
+        pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_RXNEIE); //Enables RXNEIE bit to trigger on interrupt from the RXNE flag in SR
+
+
+    }
+
+    return state;
+}
+
+/**
+ * @brief  
+ * @note   
  * @param  *pSPIx: 
  * @param  EnorDi: 
  * @retval None
@@ -238,4 +294,129 @@ void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi) {
     } else {
         pSPIx->CR2 &= ~(1 << SPI_CR2_SSOE);
     }
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pSPIHandle: 
+ * @retval None
+ */
+
+void SPI_IRQHandling(SPI_Handle_t *pSPIHandle) {
+    uint8_t temp1, temp2;
+
+    temp1 = pSPIHandle->pSPIx->SR & (1 << SPI_SR_TXE);
+    temp2 = pSPIHandle->pSPIx->CR2 & (1 << SPI_CR2_TXEIE);
+
+    if (temp1 && temp2) {
+        //handle TXE
+        spi_txe_interrupt_handle();
+    }
+
+    temp1 = pSPIHandle->pSPIx->SR & (1 << SPI_SR_RXNE);
+    temp2 = pSPIHandle->pSPIx->CR2 & (1 << SPI_CR2_RXNEIE);
+
+    if (temp1 && temp2) {
+        //handle RXNE
+        spi_rxne_interrupt_handle();
+
+    }
+
+    temp1 = pSPIHandle->pSPIx->SR & (1 << SPI_SR_OVR);
+    temp2 = pSPIHandle->pSPIx->CR2 & (1 << SPI_CR2_ERRIE);
+
+    if (temp1 && temp2) {
+        spi_ovr_err_interrupt_handle();
+    }
+    
+
+}
+
+
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle) {
+
+    if( (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF)) ) {
+            //16 bit DFF
+            //1. load the data into the DR
+            pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer);
+            pSPIHandle->TxLen--;
+            pSPIHandle->TxLen--;
+            (uint16_t*) pSPIHandle->pTxBuffer++;
+        } else {
+            //8 bit DFF
+            pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer;
+            pSPIHandle->TxLen--;
+            pSPIHandle->pTxBuffer++;
+        }
+
+    if(!pSPIHandle->TxLen) {
+        pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
+        pSPIHandle->pTxBuffer = NULL;
+        pSPIHandle->TxLen = 0;
+        pSPIHandle->TxState = SPI_READY;
+        SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
+    }
+}
+
+static void spi_rxne_interrupt_handle(SPI_Handle_t *pSPIHandle) {
+
+        if( (pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF)) ) {
+            //16 bit DFF
+            //1. load data from DR to RxBuffer
+            *((uint16_t*)pSPIHandle->pRxBuffer) = pSPIHandle->pSPIx->DR;
+            pSPIHandle->RxLen--;
+            pSPIHandle->RxLen--;
+            (uint16_t*) pSPIHandle->pRxBuffer++;
+        } else {
+            //8 bit DFF
+            *pSPIHandle->pRxBuffer = pSPIHandle->pSPIx->DR;
+            pSPIHandle->RxLen--;
+            pSPIHandle->pRxBuffer++;
+        }
+
+        if (!pSPIHandle->RxLen) {
+
+            SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_RX_CMPLT);
+        }
+
+}
+
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle) {
+	uint8_t temp;
+	
+	if(pSPIHandle->TxState != SPI_BUSY_IN_TX)
+	{
+		temp = pSPIHandle->pSPIx->DR;
+		temp = pSPIHandle->pSPIx->SR;
+	}
+	(void)temp;
+	SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_OVR_ERR);
+
+}
+
+
+void SPI_CloseTransmission(SPI_Handle_t *pSPIHandle) {
+    pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
+    pSPIHandle->pTxBuffer = NULL;
+    pSPIHandle->TxLen = 0;
+    pSPIHandle->TxState = SPI_READY;
+}
+
+void SPI_CloseReception(SPI_Handle_t *pSPIHandle) {
+	pSPIHandle->pSPIx->CR2 &= ~( 1 << SPI_CR2_RXNEIE);
+	pSPIHandle->pRxBuffer = NULL;
+	pSPIHandle->RxLen = 0;
+	pSPIHandle->RxState = SPI_READY;
+}
+
+void SPI_ClearOVRFlag(SPI_RegDef_t *pSPIx) {
+	uint8_t temp;
+	temp = pSPIx->DR;
+	temp = pSPIx->SR;
+	(void)temp;
+}
+
+void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv) {
+
 }
