@@ -296,6 +296,69 @@ void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi) {
     }
 }
 
+
+/**
+ * @brief  
+ * @note   
+ * @param  IRQNumber: 
+ * @param  EnorDi: 
+ * @retval None
+ */
+void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
+{
+
+	if(EnorDi == ENABLE)
+	{
+		if(IRQNumber <= 31)
+		{
+			*NVIC_ISER0 |= ( 1 << IRQNumber );
+
+		}else if(IRQNumber > 31 && IRQNumber < 64 )
+		{
+			*NVIC_ISER1 |= ( 1 << (IRQNumber % 32) );
+		}
+		else if(IRQNumber >= 64 && IRQNumber < 96 )
+		{
+			*NVIC_ISER3 |= ( 1 << (IRQNumber % 64) );
+		}
+	}else
+	{
+		if(IRQNumber <= 31)
+		{
+			*NVIC_ICER0 |= ( 1 << IRQNumber );
+		}else if(IRQNumber > 31 && IRQNumber < 64 )
+		{
+			*NVIC_ICER1 |= ( 1 << (IRQNumber % 32) );
+		}
+		else if(IRQNumber >= 6 && IRQNumber < 96 )
+		{
+			*NVIC_ICER3 |= ( 1 << (IRQNumber % 64) );
+		}
+	}
+
+}
+
+
+/**
+ * @brief  
+ * @note   
+ * @param  IRQNumber: 
+ * @param  IRQPriority: 
+ * @retval None
+ */
+void SPI_IRQPriorityConfig(uint8_t IRQNumber,uint32_t IRQPriority)
+{
+	
+	uint8_t iprx = IRQNumber / 4;
+	uint8_t iprx_section  = IRQNumber %4 ;
+
+	uint8_t shift_amount = ( 8 * iprx_section) + ( 8 - NO_PR_BITS_IMPLEMENTED) ;
+
+	*(  NVIC_PR_BASE_ADDR + iprx ) |=  ( IRQPriority << shift_amount );
+
+}
+
+
 /**
  * @brief  
  * @note   
@@ -311,7 +374,7 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle) {
 
     if (temp1 && temp2) {
         //handle TXE
-        spi_txe_interrupt_handle();
+        spi_txe_interrupt_handle(pSPIHandle);
     }
 
     temp1 = pSPIHandle->pSPIx->SR & (1 << SPI_SR_RXNE);
@@ -319,7 +382,7 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle) {
 
     if (temp1 && temp2) {
         //handle RXNE
-        spi_rxne_interrupt_handle();
+        spi_rxne_interrupt_handle(pSPIHandle);
 
     }
 
@@ -327,7 +390,7 @@ void SPI_IRQHandling(SPI_Handle_t *pSPIHandle) {
     temp2 = pSPIHandle->pSPIx->CR2 & (1 << SPI_CR2_ERRIE);
 
     if (temp1 && temp2) {
-        spi_ovr_err_interrupt_handle();
+        spi_ovr_err_interrupt_handle(pSPIHandle);
     }
     
 
@@ -417,6 +480,6 @@ void SPI_ClearOVRFlag(SPI_RegDef_t *pSPIx) {
 	(void)temp;
 }
 
-void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv) {
+__weak void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv) {
 
 }
