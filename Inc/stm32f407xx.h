@@ -539,8 +539,8 @@ typedef struct {
  * Bit position definitions I2C_CCR
  */
 #define I2C_CCR_CCR 					 0
-#define I2C_CCR_DUTY 					14
-#define I2C_CCR_FS  				 	15
+#define I2C_CCR_DUTY 					 14
+#define I2C_CCR_FS  				 	 15
 
 
 /*
