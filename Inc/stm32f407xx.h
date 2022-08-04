@@ -240,14 +240,14 @@ typedef struct {
 typedef struct {
     volatile uint32_t CR1;                       // I2C control register 1                                      address offset: 0x00                    
     volatile uint32_t CR2;                       // I2C control register 2                                      address offset: 0x04
-    volatile uint32_t I2C_OAR1;                  // I2C Own address register 1                                  address offset: 0x08
-    volatile uint32_t I2C_OAR2;                  // I2C Own address register 2                                  address offset: 0x0C
-    volatile uint32_t I2C_DR;                    // I2C Data register                                           address offset: 0x10
-    volatile uint32_t I2C_SR1;                   // I2C status register 1                                       address offset: 0x14
-    volatile uint32_t I2C_SR2;                   // I2C status register 2                                       address offset: 0x18
-    volatile uint32_t I2C_CCR;                   // I2C clock control register                                  address offset: 0x1C
-    volatile uint32_t I2C_TRISE;                 // I2C TRISE register                                          address offset: 0x20
-    volatile uint32_t I2C_FLTR;                  // I2C digital noise filter register                           address offset: 0x24
+    volatile uint32_t OAR1;                  // I2C Own address register 1                                  address offset: 0x08
+    volatile uint32_t OAR2;                  // I2C Own address register 2                                  address offset: 0x0C
+    volatile uint32_t DR;                    // I2C Data register                                           address offset: 0x10
+    volatile uint32_t SR1;                   // I2C status register 1                                       address offset: 0x14
+    volatile uint32_t SR2;                   // I2C status register 2                                       address offset: 0x18
+    volatile uint32_t CCR;                   // I2C clock control register                                  address offset: 0x1C
+    volatile uint32_t TRISE;                 // I2C TRISE register                                          address offset: 0x20
+    volatile uint32_t FLTR;                  // I2C digital noise filter register                           address offset: 0x24
 } I2C_RegDef_t;
 
 /*
@@ -355,9 +355,9 @@ typedef struct {
 * Clock Disable Macros for I2Cx peripherals
 */
 
-#define I2C1_PCLK_EN()              (RCC->APB1ENR &= ~(1 << 21))
-#define I2C2_PCLK_EN()              (RCC->APB1ENR &= ~(1 << 22))
-#define I2C3_PCLK_EN()              (RCC->APB1ENR &= ~(1 << 23))
+#define I2C1_PCLK_DI()              (RCC->APB1ENR &= ~(1 << 21))
+#define I2C2_PCLK_DI()              (RCC->APB1ENR &= ~(1 << 22))
+#define I2C3_PCLK_DI()              (RCC->APB1ENR &= ~(1 << 23))
 
 /*
 * GPIO Reset macros
@@ -396,6 +396,14 @@ typedef struct {
 #define SPI2_REG_RESET()            do {(RCC->APB1RSTR |= (1 << 14)); (RCC->APB1RSTR &= ~(1 << 14));} while(0)
 #define SPI3_REG_RESET()            do {(RCC->APB1RSTR |= (1 << 15)); (RCC->APB1RSTR &= ~(1 << 15));} while(0)
 
+
+/*
+ *  I2C Reset Macros
+ */
+
+#define I2C_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 21)); (RCC->APB1RSTR &= ~(1 << 21));} while(0)
+#define I2C_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 22)); (RCC->APB1RSTR &= ~(1 << 22));} while(0)
+#define I2C_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 23)); (RCC->APB1RSTR &= ~(1 << 23));} while(0)
 
 /*
  * IRQ Number Macro

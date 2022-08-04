@@ -30,7 +30,7 @@ void SPI_PeriClockControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi) {
         } else if (pSPIx == SPI2) {
             SPI2_PCLK_DI();
         } else if (pSPIx == SPI3) {
-            SPI3_PCLK_EN();
+            SPI3_PCLK_DI();
         }
     }
 }
@@ -126,7 +126,7 @@ uint8_t SPI_GetFlagStatus(SPI_RegDef_t * pSPIx, uint32_t FlagName) {
  */
 void SPI_DeInit(SPI_RegDef_t* pSPIx) {
     if (pSPIx == SPI1) {
-        SPI1_REG_RESET();
+        SPI1_REG_RESET();  
     } else if (pSPIx == SPI2) {
         SPI2_REG_RESET();
     } else if (pSPIx == SPI3) {
