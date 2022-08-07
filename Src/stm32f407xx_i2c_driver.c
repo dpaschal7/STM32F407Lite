@@ -15,8 +15,9 @@ void I2C_Init(I2C_Handle_t *pI2CHandle) {
 
 
     //configure freq
-    
-    
+    tempreg = 0;
+    tempreg = RCC_GetPCLK1Value() / 1000000U;
+    pI2CHandle->pI2Cx->CR2 |= (tempreg & 0x3F);
     // device address???
 
     tempreg = 0;
@@ -25,12 +26,18 @@ void I2C_Init(I2C_Handle_t *pI2CHandle) {
     pI2CHandle->pI2Cx->OAR1 = tempreg;
 
 
-    //TRISE Config
+    uint16_t ccr_value = 0;
+    tempreg = 0;
+
+    
 
     if (pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM) {
-
+        ccr_value = (RCC_GetPCLK1Value() / (2 * pI2CHandle->I2C_Config.I2C_SCLSpeed));
+        
     } else {
-
+        // I2C_SCL_SPEED_FM
+        tempreg |= (1 << 15);
+        tmepreg |= (pI2CHandle->I2C_Config.I2C_FMDutyCycle)
     }
 }
 
