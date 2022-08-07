@@ -3,6 +3,53 @@
 
 
 
+
+void I2C_Init(I2C_Handle_t *pI2CHandle) {
+
+    uint32_t tempreg = 0;
+    // enable clock based on handler pI2Cx
+    I2C_PeriClockControl(pI2CHandle->pI2Cx, ENABLE);
+
+    // assign ack control bit
+    pI2CHandle->pI2Cx->CR1 |= (pI2CHandle->I2C_Config.I2C_ACKControl << I2C_CR1_ACK);
+
+
+    //configure freq
+    
+    
+    // device address???
+
+    tempreg = 0;
+    tempreg |= pI2CHandle->I2C_Config.I2C_DeviceAddress << 1;
+    tempreg |= (1 << 14); // the 14th bit of OAR1 should always be keep to 1 via software
+    pI2CHandle->pI2Cx->OAR1 = tempreg;
+
+
+    //TRISE Config
+
+    if (pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM) {
+
+    } else {
+
+    }
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2Cx: 
+ * @retval None
+ */
+void I2C_DeInit(I2C_RegDef_t *pI2Cx) {
+    if (pI2Cx == I2C1) {
+        I2C1_REG_RESET();
+    } else if (pI2Cx == I2C2) {
+        I2C2_REG_RESET();
+    } else if (pI2Cx == I2C3) {
+        I2C3_REG_RESET();
+    }   
+}
+
 /**
  * @brief  
  * @note   
