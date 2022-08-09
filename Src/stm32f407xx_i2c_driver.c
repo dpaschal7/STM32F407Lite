@@ -18,27 +18,40 @@ void I2C_Init(I2C_Handle_t *pI2CHandle) {
     tempreg = 0;
     tempreg = RCC_GetPCLK1Value() / 1000000U;
     pI2CHandle->pI2Cx->CR2 |= (tempreg & 0x3F);
-    // device address???
+    
+    //configure device address (7 bit address mode) 
 
     tempreg = 0;
     tempreg |= pI2CHandle->I2C_Config.I2C_DeviceAddress << 1;
     tempreg |= (1 << 14); // the 14th bit of OAR1 should always be keep to 1 via software
-    pI2CHandle->pI2Cx->OAR1 = tempreg;
+    pI2CHandle->pI2Cx->OAR1 |= tempreg;
 
 
     uint16_t ccr_value = 0;
     tempreg = 0;
 
-    
-
     if (pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM) {
+        pI2CHandle->pI2Cx->CCR &= ~(1 << 15);
         ccr_value = (RCC_GetPCLK1Value() / (2 * pI2CHandle->I2C_Config.I2C_SCLSpeed));
+        tempreg |= (ccr_value & 0xFFF);
         
     } else {
         // I2C_SCL_SPEED_FM
-        tempreg |= (1 << 15);
-        tmepreg |= (pI2CHandle->I2C_Config.I2C_FMDutyCycle)
+     
+        tempreg |= (1 << 15); // enable fast mode
+        tempreg |= (pI2CHandle->I2C_Config.I2C_FMDutyCycle << 14);
+
+        if (pI2CHandle->I2C_Config.I2C_FMDutyCycle == I2C_FM_DUTY_2) {
+            ccr_value = (RCC_GetPCLK1Value() / (3 * pI2CHandle->I2C_Config.I2C_SCLSpeed));
+
+        } else if (pI2CHandle->I2C_Config.I2C_FMDutyCycle == I2C_FM_DUTY_16_9) {
+            ccr_value = (RCC_GetPCLK1Value() / (25 * pI2CHandle->I2C_Config.I2C_SCLSpeed));
+        }
+        tempreg |= (ccr_value & 0xFFF);
     }
+    pI2CHandle->pI2Cx->CCR = tempreg;
+
+
 }
 
 /**
