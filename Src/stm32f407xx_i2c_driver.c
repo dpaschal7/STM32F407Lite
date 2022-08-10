@@ -1,8 +1,51 @@
 #include "stm32f407xx_i2c_driver.h"
 
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
+static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr);
+
+static void I2C_ClearADDRFlag(I2C_Handle_t *pI2CHandle);
 
 
+static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx) {
+    pI2Cx->CR1 |= (1 << I2C_CR1_START);
+}
 
+void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx) {
+    pI2Cx->CR1 |= (1 << I2C_CR1_STOP);
+}
+
+static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr) {
+    SubnodeAddr = SubnodeAddr << 1;
+    SubnodeAddr &= ~(1); // subnode addr + r/!w bit (r/!w = 0)
+    pI2Cx->DR = SubnodeAddr;
+}
+
+static void I2C_ClearADDRFlag(I2C_Handle_t *pI2CHandle) {
+    uint32_t tempread;
+    
+    //check if device is in main or subnode mode
+    if (pI2CHandle->pI2Cx->SR2 & (1 << I2C_SR2_MSL)) { //I2C_SR2_MSL == 0 (subnode)
+                                                       //I2C_SR2_MSL == 1 (main)
+        if (pI2CHandle->TxRxState == I2C_BUSY_IN_RX) { //if I2C is busy in rx, disable the ack and then clear the addr flag
+            I2C_ManageAcking(pI2CHandle->pI2Cx, DISABLE);
+            //reading from SR1 and then SR2 to clear ADDR flag
+            tempread = pI2CHandle->pI2Cx->SR1;
+		    tempread = pI2CHandle->pI2Cx->SR2;
+            (void)tempread;
+
+        } else {
+            tempread = pI2CHandle->pI2Cx->SR1;
+		    tempread = pI2CHandle->pI2Cx->SR2;
+            (void)tempread;
+        }
+    } else {
+        tempread = pI2CHandle->pI2Cx->SR1;
+		tempread = pI2CHandle->pI2Cx->SR2;
+        (void)tempread;
+    }
+
+}
+ 
 
 void I2C_Init(I2C_Handle_t *pI2CHandle) {
 
@@ -52,7 +95,19 @@ void I2C_Init(I2C_Handle_t *pI2CHandle) {
     pI2CHandle->pI2Cx->CCR = tempreg;
 
 
+    //TRISE Config
+	if(pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM) {
+		tempreg = (RCC_GetPCLK1Value() /1000000U) + 1 ;
+
+	} else {
+		tempreg = ( (RCC_GetPCLK1Value() * 300) / 1000000000U ) + 1;
+	}
+
+	pI2CHandle->pI2Cx->TRISE = (tempreg & 0x3F);
+
 }
+
+
 
 /**
  * @brief  
@@ -68,6 +123,67 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx) {
     } else if (pI2Cx == I2C3) {
         I2C3_REG_RESET();
     }   
+}
+
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @param  *pTxBuffer: 
+ * @param  Len: 
+ * @param  SubnodeAddr: 
+ * @param  Sr: 
+ * @retval None
+ */
+void I2C_MainSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr) {
+
+    I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+    while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));//check SB flag to make sure start condition has been generated
+
+    I2C_ExecuteAddressPhaseWrite(pI2CHandle->pI2Cx, SubnodeAddr);
+
+    while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR)); // check that address phase is completed
+
+    I2C_ClearADDRFlag(pI2CHandle);
+
+    while (Len) {
+        while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE));
+        pI2CHandle->pI2Cx->DR = *pTxBuffer;
+        pTxBuffer++;
+        Len--;
+    }
+
+    //after data length is zero wait for transmission buffer to be empty and then check the byte transfer finished flag
+    while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE));
+
+	while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_BTF)); //btf == 0 (data transfer not done)
+                                                                //btf == 1 (data transfer succeeded)
+    if (Sr == I2C_DISABLE_SR) {
+        I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+    }
+
+}
+
+
+
+
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2Cx: 
+ * @param  EnorDi: 
+ * @retval None
+ */
+void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
+{
+	if (EnorDi == I2C_ACK_ENABLE) {
+		pI2Cx->CR1 |= ( 1 << I2C_CR1_ACK);
+	} else {
+		pI2Cx->CR1 &= ~( 1 << I2C_CR1_ACK);
+	}
 }
 
 /**
@@ -101,7 +217,7 @@ void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi) {
 
 
 /**
- * @brief  
+ * @brief  Enables or disables the register pointed to by pI2Cx with the ENABLE or DISABLE macro 
  * @note   
  * @param  *pI2Cx: 
  * @param  EnorDi: 
