@@ -235,9 +235,10 @@ void I2C_MainReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t L
 
     }
 
-    if (pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE) [
+    if (pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE) {
         I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
-    ]
+    }
+        
 
 }
 
