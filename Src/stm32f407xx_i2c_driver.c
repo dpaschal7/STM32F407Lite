@@ -2,6 +2,7 @@
 
 static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
 static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr);
+static void I2C_ExecuteAddressPhaseRead(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr);
 
 static void I2C_ClearADDRFlag(I2C_Handle_t *pI2CHandle);
 
@@ -16,7 +17,13 @@ void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx) {
 
 static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr) {
     SubnodeAddr = SubnodeAddr << 1;
-    SubnodeAddr &= ~(1); // subnode addr + r/!w bit (r/!w = 0)
+    SubnodeAddr &= ~(1); // subnode addr + r/!w bit (r/!w set to 0)
+    pI2Cx->DR = SubnodeAddr;
+}
+
+static void I2C_ExecuteAddressRead(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr) {
+    SubnodeAddr = SubnodeAddr << 1;
+    SubnodeAddr |= 1; // subnode addr + r/!w bit (r/!w set to 1)
     pI2Cx->DR = SubnodeAddr;
 }
 
@@ -140,7 +147,7 @@ void I2C_MainSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len,
 
     I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
 
-    while (!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));//check SB flag to make sure start condition has been generated
+    while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));//check SB flag to make sure start condition has been generated
 
     I2C_ExecuteAddressPhaseWrite(pI2CHandle->pI2Cx, SubnodeAddr);
 
@@ -167,7 +174,72 @@ void I2C_MainSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len,
 }
 
 
+/**
+ * @brief   
+ * @note   
+ * @param  *pI2CHandle: 
+ * @param  *pTxBuffer: 
+ * @param  Len: 
+ * @param  SubnodeAddr: 
+ * @param  Sr: 
+ * @retval None
+ */
 
+void I2C_MainReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr) {
+    
+    I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+    while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));
+
+    I2C_ExecuteAddressPhaseRead(pI2CHandle->pI2Cx, SubnodeAddr);
+
+    while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR));
+
+    
+
+    if (Len == 1) {
+        
+        I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_DISABLE);
+        
+        I2C_ClearADDRFlag(pI2CHandle);
+
+        while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_RXNE));
+
+        if (Sr == I2C_DISABLE_SR) {
+            I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+        }
+
+        *pRxBuffer = pI2CHandle->pI2Cx->DR;
+    }
+
+    if (Len > 1) {
+
+        I2C_ClearADDRFlag(pI2CHandle);
+
+        for (uint32_t i = Len; i > 0; --i) {
+
+            while(!I2C_GetFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_RXNE));
+
+            if (i == 2) {
+                I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_DISABLE);
+
+                if (Sr == I2C_DISABLE_SR) {
+                    I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+                }
+            }
+
+            *pRxBuffer = pI2CHandle->pI2Cx->DR;
+
+            pRxBuffer++;
+        } 
+
+    }
+
+    if (pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE) [
+        I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
+    ]
+
+}
 
 
 /**
