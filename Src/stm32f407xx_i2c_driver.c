@@ -319,9 +319,7 @@ uint8_t I2C_MainReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint
 static void I2C_MainHandleTXEInterrupt(I2C_Handle_t *pI2CHandle) {
     if(pI2CHandle->TxLen > 0) {
         pI2CHandle->pI2Cx->DR = *(pI2CHandle->pTxBuffer);
-
         pI2CHandle->TxLen--;
-
         pI2CHandle->pTxBuffer++;
     }
 }
@@ -334,8 +332,101 @@ static void I2C_MainHandleTXEInterrupt(I2C_Handle_t *pI2CHandle) {
  */
 static void I2C_MainHandleRXNEInterrupt(I2C_Handle_t *pI2CHandle) {
 
+    if (pI2CHandle->RxSize == 1) {
+        *pI2CHandle->pRxBuffer = pI2CHandle->pI2Cx->DR;
+        pI2CHandle->RxLen--;
+    }
+
+    if (pI2CHandle->RxSize > 1) {
+
+        if (pI2CHandle->RxLen == 2) {
+            I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_DISABLE);
+        }
+
+        *pI2CHandle->pRxBuffer = pI2CHandle->pI2Cx->DR;
+        pI2CHandle->pRxBuffer++;
+        pI2CHandle->RxLen--;
+
+    }
+
+    if (pI2CHandle->RxLen == 0) {
+        //close data reception and change state to CMPLT
+
+        if (pI2CHandle->Sr == I2C_DISABLE_SR) {
+            I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
+        }
+
+        I2C_CloseReceiveData(pI2CHandle);
+
+        I2C_ApplicationEventCallback(pI2CHandle, I2C_EV_RX_CMPLT);
+    }
 
 
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @retval None
+ */
+void I2C_CloseSendData(I2C_Handle_t *pI2CHandle) {
+	//ITBUFEN Control Bit = 0
+	pI2CHandle->pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITBUFEN);
+
+	//ITEVFEN Control Bit = 0
+	pI2CHandle->pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITEVTEN);
+
+
+	pI2CHandle->TxRxState = I2C_READY;
+	pI2CHandle->pTxBuffer = NULL;
+	pI2CHandle->TxLen = 0;
+}
+
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @retval None
+ */
+void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle) {
+	//ITBUFEN Control Bit = 0
+	pI2CHandle->pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITBUFEN);
+
+	//ITEVFEN Control Bit = 0
+	pI2CHandle->pI2Cx->CR2 &= ~( 1 << I2C_CR2_ITEVTEN);
+
+
+	pI2CHandle->TxRxState = I2C_READY;
+	pI2CHandle->pRxBuffer = NULL;
+	pI2CHandle->RxLen = 0;
+    pI2CHandle->RxSize = 0;
+
+    if (pI2CHandle->I2C_Config.I2C_ACKControl == I2C_ACK_ENABLE) {
+        I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
+    }
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2C: 
+ * @param  data: 
+ * @retval None
+ */
+void I2C_SubnodeSendData(I2C_RegDef_t *pI2C, uint8_t data) {
+    pI2C->DR = data;
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2C: 
+ * @retval 
+ */
+uint8_t I2C_SubnodeReceiveData(I2C_RegDef_t *pI2C) {
+    return (uint8_t) *pI2C->DR;
 }
 
 
