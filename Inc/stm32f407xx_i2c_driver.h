@@ -110,6 +110,9 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx);
 void I2C_MainSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
 void I2C_MainReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
 
+uint8_t I2C_MainSendDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
+uint8_t I2C_MainReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
+
 /* 
  * Peripheral Controls
  */

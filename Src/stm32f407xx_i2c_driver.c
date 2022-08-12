@@ -4,6 +4,10 @@ static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
 static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr);
 static void I2C_ExecuteAddressPhaseRead(I2C_RegDef_t *pI2Cx, uint8_t SubnodeAddr);
 
+static void I2C_MainHandleTXEInterrupt(I2C_Handle_t  *pI2CHandle);
+static void I2C_MainHandleRXNEInterrupt(I2C_Handle_t  *pI2CHandle);
+
+
 static void I2C_ClearADDRFlag(I2C_Handle_t *pI2CHandle);
 
 
@@ -239,6 +243,98 @@ void I2C_MainReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t L
         I2C_ManageAcking(pI2CHandle->pI2Cx, I2C_ACK_ENABLE);
     }
         
+
+}
+
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @param  *pTxBuffer: 
+ * @param  Len: 
+ * @param  SubnodeAddr: 
+ * @param  Sr: 
+ * @retval 
+ */
+uint8_t I2C_MainSendDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr) {
+
+    uint8_t state = pI2CHandle->TxRxState;
+
+    if ((state != I2C_BUSY_IN_TX) && (state != I2C_BUSY_IN_RX)) {
+        pI2CHandle->pTxBuffer = pTxBuffer;
+        pI2CHandle->TxLen = Len;
+        pI2CHandle->TxRxState = I2C_BUSY_IN_TX;
+        pI2CHandle->DevAddr = SubnodeAddr;
+        pI2CHandle->Sr = Sr;
+
+        I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITEVTEN);
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITBUFEN);
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITERREN);
+    }
+
+    return state;
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @param  *pRxBuffer: 
+ * @param  Len: 
+ * @param  SubnodeAddr: 
+ * @param  Sr: 
+ * @retval 
+ */
+uint8_t I2C_MainReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr) {
+    
+    uint8_t state = pI2CHandle->TxRxState;
+
+    if ((state != I2C_BUSY_IN_TX) && (state != I2C_BUSY_IN_RX)) {
+        pI2CHandle->pTxBuffer = pRxBuffer;
+        pI2CHandle->RxLen = Len;
+        pI2CHandle->RxSize = Len;
+        pI2CHandle->TxRxState = I2C_BUSY_IN_RX;
+        pI2CHandle->DevAddr = SubnodeAddr;
+        pI2CHandle->Sr = Sr;
+
+        I2C_GenerateStartCondition(pI2CHandle->pI2Cx);
+
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITEVTEN);
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITBUFEN);
+        pI2CHandle->pI2Cx->CR2 |= (1 << I2C_CR2_ITERREN);
+    }
+
+    return state;
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @retval None
+ */
+static void I2C_MainHandleTXEInterrupt(I2C_Handle_t *pI2CHandle) {
+    if(pI2CHandle->TxLen > 0) {
+        pI2CHandle->pI2Cx->DR = *(pI2CHandle->pTxBuffer);
+
+        pI2CHandle->TxLen--;
+
+        pI2CHandle->pTxBuffer++;
+    }
+}
+
+/**
+ * @brief  
+ * @note   
+ * @param  *pI2CHandle: 
+ * @retval None
+ */
+static void I2C_MainHandleRXNEInterrupt(I2C_Handle_t *pI2CHandle) {
+
+
 
 }
 
