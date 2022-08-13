@@ -125,15 +125,16 @@ void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 void I2C_CloseSendData(I2C_Handle_t *pI2CHandle);
 void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
 
-
-
 /* 
  * IRQ Configuration and ISR handling 
  */
 
 void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
-//void I2C_IRQHandling(I2C_Handle_t *pI2CHandle);
 void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority);
+void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle);
+void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle);
+
+void I2C_SubnodeEnableDisableCallbackEvents(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
 
 void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t AppEv);
 
