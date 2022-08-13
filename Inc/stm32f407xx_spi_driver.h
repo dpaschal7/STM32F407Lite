@@ -189,7 +189,7 @@ void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi);
 
 void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
 void SPI_IRQHandling(SPI_Handle_t *pSPIHandle);
-void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority);
+void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority);
 
 void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv);
 #endif /* INC_STM32F407XX_SPI_DRIVER_H_ */

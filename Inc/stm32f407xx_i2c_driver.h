@@ -1,6 +1,8 @@
 #ifndef INC_STM32F407XX_I2C_DRIVER_H_
 #define INC_STM32F407XX_I2C_DRIVER_H_
 
+#include "stm32f407xx.h"
+
 typedef struct {
     uint32_t I2C_SCLSpeed;
     uint8_t  I2C_DeviceAddress;
@@ -130,7 +132,7 @@ void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
  */
 
 void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
-void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint8_t IRQPriority);
+void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority);
 void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle);
 void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle);
 

@@ -217,7 +217,7 @@ typedef struct {
 } EXTI_RegDef_t;
 
 /*
-* SPIx configuration structure 
+* SPIx register structure 
 */
 
 typedef struct {  
@@ -234,21 +234,38 @@ typedef struct {
 
 
 /*
-* I2Cx configuration structure
+* I2Cx register structure
 */
 
 typedef struct {
     volatile uint32_t CR1;                       // I2C control register 1                                      address offset: 0x00                    
     volatile uint32_t CR2;                       // I2C control register 2                                      address offset: 0x04
-    volatile uint32_t OAR1;                  // I2C Own address register 1                                  address offset: 0x08
-    volatile uint32_t OAR2;                  // I2C Own address register 2                                  address offset: 0x0C
-    volatile uint32_t DR;                    // I2C Data register                                           address offset: 0x10
-    volatile uint32_t SR1;                   // I2C status register 1                                       address offset: 0x14
-    volatile uint32_t SR2;                   // I2C status register 2                                       address offset: 0x18
-    volatile uint32_t CCR;                   // I2C clock control register                                  address offset: 0x1C
-    volatile uint32_t TRISE;                 // I2C TRISE register                                          address offset: 0x20
-    volatile uint32_t FLTR;                  // I2C digital noise filter register                           address offset: 0x24
+    volatile uint32_t OAR1;                      // I2C Own address register 1                                  address offset: 0x08
+    volatile uint32_t OAR2;                      // I2C Own address register 2                                  address offset: 0x0C
+    volatile uint32_t DR;                        // I2C Data register                                           address offset: 0x10
+    volatile uint32_t SR1;                       // I2C status register 1                                       address offset: 0x14
+    volatile uint32_t SR2;                       // I2C status register 2                                       address offset: 0x18
+    volatile uint32_t CCR;                       // I2C clock control register                                  address offset: 0x1C
+    volatile uint32_t TRISE;                     // I2C TRISE register                                          address offset: 0x20
+    volatile uint32_t FLTR;                      // I2C digital noise filter register                           address offset: 0x24
 } I2C_RegDef_t;
+
+
+/*
+* USART register structure
+*/
+
+typedef struct  {
+    volatile uint32_t SR;                        // USART status register                                       address offset: 0x00
+    volatile uint32_t DR;                        // USART data register                                         address offset: 0x04
+    volatile uint32_t BRR;                       // USART baud rate register                                    address offset: 0x08
+    volatile uint32_t CR1;                       // USART control register 1                                    address offset: 0x0C
+    volatile uint32_t CR2;                       // USART control register 2                                    address offset: 0x10
+    volatile uint32_t CR3;                       // USART control register 3                                    address offset: 0x14
+    volatile uint32_t GTPR;                      // USART guard time and prescaler register                     address offset: 0x18
+} USART_RegDef_t;
+
+
 
 /*
 * Peripheral definitions (Peripheral base addresses typecasted to xxxx_RegDef_t)
@@ -279,6 +296,13 @@ typedef struct {
 #define I2C1                        ((I2C_RegDef_t*) I2C1_BASEADDR)
 #define I2C2                        ((I2C_RegDef_t*) I2C2_BASEADDR)
 #define I2C3                        ((I2C_RegDef_t*) I2C3_BASEADDR)
+
+#define USART1                      ((USART_RegDef_t*) USART1_BASEADDR)                                              
+#define USART2                      ((USART_RegDef_t*) USART2_BASEADDR)                      
+#define USART3                      ((USART_RegDef_t*) USART3_BASEADDR)                      
+#define UART4                       ((USART_RegDef_t*) UART4_BASEADDR)                      
+#define UART5                       ((USART_RegDef_t*) UART5_BASEADDR)                      
+#define USART6                      ((USART_RegDef_t*) USART6_BASEADDR)                      
 
 /*
 * Clock Enable Macros for GPIOx peripherals
@@ -360,6 +384,18 @@ typedef struct {
 #define I2C3_PCLK_DI()              (RCC->APB1ENR &= ~(1 << 23))
 
 /*
+* Clock Disable Macros for USART/ peripherals
+*/
+
+#define USART1_PCLK_DI()            (RCC->APB2ENR &= ~(1 << 4))
+#define USART2_PCLK_DI()            (RCC->APB1ENR &= ~(1 << 17))
+#define USART3_PCLK_DI()            (RCC->APB1ENR &= ~(1 << 18))
+#define UART4_PCLK_DI()             (RCC->APB1ENR &= ~(1 << 19))
+#define UART5_PCLK_DI()             (RCC->APB1ENR &= ~(1 << 20))
+#define USART6_PCLK_DI()            (RCC->APB1ENR &= ~(1 << 5))
+
+
+/*
 * GPIO Reset macros
 */
 
@@ -404,6 +440,19 @@ typedef struct {
 #define I2C1_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 21)); (RCC->APB1RSTR &= ~(1 << 21));} while(0)
 #define I2C2_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 22)); (RCC->APB1RSTR &= ~(1 << 22));} while(0)
 #define I2C3_REG_RESET()             do {(RCC->APB1RSTR |= (1 << 23)); (RCC->APB1RSTR &= ~(1 << 23));} while(0)
+
+
+/*
+ * USART Reset Macros
+ */
+
+#define USART1_REG_RESET()          do {(RCC->APB2ENR &= ~(1 << 4)); (RCC->APB2ENR &= ~(1 << 4));} while(0)          
+#define USART2_REG_RESET()          do {(RCC->APB1ENR &= ~(1 << 17)); (RCC->APB1ENR &= ~(1 << 17));} while(0)
+#define USART3_REG_RESET()          do {(RCC->APB1ENR &= ~(1 << 18)); (RCC->APB1ENR &= ~(1 << 18));} while(0)
+#define UART4_REG_RESET()           do {(RCC->APB1ENR &= ~(1 << 19)); (RCC->APB1ENR &= ~(1 << 19));} while(0)
+#define UART5_REG_RESET()           do {(RCC->APB1ENR &= ~(1 << 20)); (RCC->APB1ENR &= ~(1 << 20));} while(0)
+#define USART6_REG_RESET()          do {(RCC->APB1ENR &= ~(1 << 5)); (RCC->APB1ENR &= ~(1 << 5));} while(0)
+
 
 /*
  * IRQ Number Macro

@@ -346,7 +346,7 @@ void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
  * @param  IRQPriority: 
  * @retval None
  */
-void SPI_IRQPriorityConfig(uint8_t IRQNumber,uint32_t IRQPriority)
+void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
 {
 	
 	uint8_t iprx = IRQNumber / 4;
