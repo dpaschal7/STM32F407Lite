@@ -640,7 +640,7 @@ void I2C_ManageAcking(I2C_RegDef_t *pI2Cx, uint8_t EnorDi)
 void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi) {
     if (EnorDi == ENABLE) {
 
-        if (pI2Cx == I2C1){
+        if (pI2Cx == I2C1) {
             I2C1_PCLK_EN();
         } else if (pI2Cx == I2C2) {
             I2C2_PCLK_EN();
@@ -648,7 +648,7 @@ void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi) {
             I2C3_PCLK_EN();
         }
     } else {
-        if (pI2Cx == I2C1){ 
+        if (pI2Cx == I2C1) { 
             I2C1_PCLK_DI();
         } else if (pI2Cx == I2C2) {
             I2C2_PCLK_DI();
@@ -699,8 +699,7 @@ uint8_t I2C_GetFlagStatus(I2C_RegDef_t * pI2Cx, uint32_t FlagName) {
  * @param  EnorDi: 
  * @retval None
  */
-void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)
-{
+void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi) {
 
     if(EnorDi == ENABLE)
     {
