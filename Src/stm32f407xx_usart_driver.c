@@ -165,6 +165,13 @@ void USART_PeriClockControl(USART_RegDef_t *pUSARTx, uint8_t EnorDi) {
 	}
 }
 
+/**
+ * @brief  
+ * @note   
+ * @param  *pUSARTx: 
+ * @param  EnorDi: 
+ * @retval None
+ */
 void USART_PeripheralControl(USART_RegDef_t *pUSARTx, uint8_t EnorDi) {
     if (EnorDi == ENABLE) {
         pUSARTx->CR1 |= (1 << USART_CR1_UE);
