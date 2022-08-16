@@ -95,7 +95,6 @@ typedef struct {
 /* 
  * Peripheral Clock setup 
  */
-
 void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
 
 /* 
@@ -108,7 +107,6 @@ void I2C_DeInit(I2C_RegDef_t *pI2Cx);
 /* 
  * Data TX & RX 
  */
-
 void I2C_MainSendData(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
 void I2C_MainReceiveData(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint8_t Len, uint8_t SubnodeAddr, uint8_t Sr);
 
@@ -117,6 +115,7 @@ uint8_t I2C_MainReceiveDataIT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint
 
 void I2C_SubnodeSendData(I2C_RegDef_t *pI2C, uint8_t data);
 uint8_t I2C_SubnodeReceiveData(I2C_RegDef_t *pI2C);
+
 /* 
  * Peripheral Controls
  */
@@ -130,7 +129,6 @@ void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
 /* 
  * IRQ Configuration and ISR handling 
  */
-
 void I2C_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi);
 void I2C_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority);
 void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle);
